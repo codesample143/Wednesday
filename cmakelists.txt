@@ -1,0 +1,50 @@
+cmake_minimum_required(VERSION 3.15)
+project(Wednesday LANGUAGES CXX)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Point to the root directory containing your local installation
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/grpc_installed")
+
+find_package(Protobuf CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
+find_package(absl CONFIG REQUIRED) 
+
+add_library(protolib proto/filesystem.proto)
+# Link against protobuf and gRPC
+target_link_libraries(protolib PUBLIC gRPC::grpc++ protobuf::libprotobuf)
+
+target_include_directories(protolib PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
+# Generate standard Protobuf files (.pb.h / .pb.cc)
+protobuf_generate(TARGET protolib LANGUAGE cpp)
+
+# Get the absolute path to the gRPC C++ plugin from the imported target
+if(TARGET gRPC::grpc_cpp_plugin)
+    get_target_property(gRPC_PLUGIN_LOC gRPC::grpc_cpp_plugin LOCATION)
+else()
+    message(FATAL_ERROR "gRPC::grpc_cpp_plugin target not found!")
+endif()
+
+# Generate gRPC files (.grpc.pb.h / .grpc.pb.cc)
+protobuf_generate(TARGET protolib LANGUAGE grpc
+    GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
+    PLUGIN "protoc-gen-grpc=${gRPC_PLUGIN_LOC}"
+)
+
+add_executable(server src/server.cpp)
+target_include_directories(server PRIVATE include)
+target_link_libraries(server PRIVATE protolib)
+
+add_executable(client src/client.cpp)
+target_include_directories(client PRIVATE 
+    include
+    $<TARGET_PROPERTY:gRPC::grpc++,INTERFACE_INCLUDE_DIRECTORIES>
+)
+target_link_libraries(client PRIVATE 
+    protolib 
+    gRPC::grpc++ 
+    ${OPENSSL_LIBRARIES}
+)
