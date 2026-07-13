@@ -117,11 +117,7 @@ By default it writes via `127.0.0.1:50051` and reads via `127.0.0.1:50053`. Edit
 
 ## Future Work: Paxos Consensus
 
-The next major step is adding **Paxos** (or a practical variant such as Multi-Paxos) to provide fault-tolerant, strongly consistent coordination and replication.
-
-### Why Paxos fits Wednesday
-
-Today, ring metadata (successor/predecessor) and file blocks are updated on a single node with no agreement protocol. Paxos would let a quorum of nodes agree on shared state before it becomes visible, which addresses durability and consistency gaps in the current design.
+The next major step is adding **Paxos** (or a practical variant such as Multi-Paxos) to provide fault-tolerant, strongly consistent coordination and replication. Currently, ring metadata (successor/predecessor) and file blocks are updated on a single node with no agreement protocol. Paxos would let a quorum of nodes agree on shared state before it becomes visible, which addresses durability and consistency gaps in the current design.
 
 ### Proposed integration areas
 
